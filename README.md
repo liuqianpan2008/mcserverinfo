@@ -10,8 +10,9 @@
 * 后端：nodejs
 
 ## 使用方法
+![image](https://user-images.githubusercontent.com/80571808/169653640-2665bffe-50d5-4aba-917d-71bcddb06c9b.png)
 
-![主程序](.\img\QQ截图20220521211702.png)
+
 
 输入``服务器地址`` **端口**不知道不用写 写完点击``开始查询``即可
 
