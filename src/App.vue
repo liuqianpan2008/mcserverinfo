@@ -2,7 +2,7 @@
   <n-config-provider :theme="theme">
     <n-message-provider>
       <n-layout :native-scrollbar="false"
-                style="height: 590px;">
+                style="min-height: 590px;">
 
         <n-layout-header class="t">
           <n-space justify="space-between">
@@ -19,7 +19,7 @@
             </n-button-group>
           </n-space>
         </n-layout-header>
-        <n-layout-content style="height: 520px;"
+        <n-layout-content style="min-height: 520px;"
                           :native-scrollbar="false">
           <n-card title="搜索">
             <n-form ref="formRef"
@@ -33,20 +33,26 @@
                 <n-input v-model:value="formValue.port"
                          placeholder="请输入查询端口" />
               </n-form-item>
-
-              <!-- <n-form-item label="服务器类型">
+              <n-form-item label="查询类型">
                 <n-radio-group v-model:value="formValue.radioValue"
                                name="radiogroup">
-                  <n-space>
-                    <n-radio name="java">
-                      java
-                    </n-radio>
-                    <n-radio name="jiyan">
-                      基岩
-                    </n-radio>
-                  </n-space>
+                  <n-radio name="java"
+                           value="java"
+                           :checked="true">
+                    java
+                  </n-radio>
+                  <n-popover trigger="hover">
+                    <template #trigger>
+                      <n-radio name="query"
+                               value="query">
+                        query(更多内容查询)
+                      </n-radio>
+                    </template>
+                    <span>支持版本1.19以上需要在配置文件打开enable-query=true</span>
+                  </n-popover>
+
                 </n-radio-group>
-              </n-form-item> -->
+              </n-form-item>
 
               <n-form-item>
                 <n-button @click="sub"
@@ -56,35 +62,58 @@
             </n-form>
           </n-card>
           <n-card title="查询结果"
-                  v-show="issub">
+                  v-show="issub"
+                  embedded>
             <template #header-extra>
               <n-popover trigger="hover">
                 <template #trigger>
-                  在线人数：{{resdate.players.online}}/{{resdate.players.max}}
+                  <div>
+                    <n-space>
+                      <n-tag>延迟：{{resdate.roundTripLatency}}</n-tag>
+                      <n-tag>在线人数：{{resdate.players.online}}/{{resdate.players.max}}</n-tag>
+                    </n-space>
+                  </div>
                 </template>
-                <n-tag>
-                  延迟：{{resdate.roundTripLatency}}
-                </n-tag>
+                <div v-show="resdate.players.list!=null">
+                  在线玩家：
+                  <span v-for="(v,i) in resdate.players.list"
+                        :key="i"
+                        style="padding-left: 3px;">{{v}}</span>
+                </div>
+                <div v-show="resdate.players.sample!=null">
+                  在线玩家：<br>
+                  <span v-for="(v,i) in resdate.players.sample"
+                        :key="i"
+                        style="padding-left: 3px;">{{v.name}}<br v-if="i%3==0"></span>
+                </div>
+                <span v-show="resdate.players.list==null && resdate.players.sample==null">使用query可以查询到在线玩家列表</span>
               </n-popover>
             </template>
-            <n-space>
+            <n-space justify="space-between">
               <n-image width="100"
                        :src="resdate.favicon" />
-              <div v-html="resdate.motd.html"></div>
+              <n-card>
+                <div v-html="resdate.motd.html"></div>
+
+                <n-tag v-show="resdate.plugins!=null">
+                  插件：<span v-for="(v,i) in resdate.plugins"
+                        :key="i"
+                        style="padding-left: 3px;">
+                    {{v}}
+                  </span>
+                </n-tag>
+              </n-card>
+
             </n-space>
             <template #footer>
               <n-tag type="success">
-                版本：{{resdate.version.name}}
+                版本：{{resdate.version.name==null?resdate.version:resdate.version.name}}
               </n-tag>
             </template>
             <template #action>
             </template>
           </n-card>
-          <n-result v-show="errbut"
-                    status="404"
-                    title="找不到服务器信息"
-                    description="生活总归带点荒谬">
-          </n-result>
+
         </n-layout-content>
         <n-layout-footer>
           <n-space justify="center">by:枫叶秋林 V0.0.1</n-space>
@@ -114,22 +143,35 @@ export default {
       version: {
         name: "未知"
       },
+
       favicon: null,
       motd: { html: "未知" },
       roundTripLatency: 999999,
       players: {
         online: 0,
-        max: 0
-      }
+        max: 0,
+        sample: null,
+        list: []
+      },
+      plugins: [],
+
     })
     // const message = useMessage()
     //"XIYE.WORLD"
     const issub = ref(false)
     const isbtlogin = ref(false)
     const errbut = ref(false)
+
     const sub = () => {
       isbtlogin.value = true
-      axios.get('http://43.138.12.187:3300/mc/java', {
+      var tapy = "";
+      if (formValue.value.radioValue == "java") {
+        tapy = "java"
+      } else {
+        tapy = "query"
+      }
+      // http://43.138.12.187:3300/mc/
+      axios.get('http://127.0.0.1:3300/mc/' + tapy, {
         params: {
           host: formValue.value.host,
           port: formValue.value.port
